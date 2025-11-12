@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>WebRTC Widget</title>
+  <script src="./webrtc.js"></script> <!-- Hosted locally -->
+  <style>
+    body {
+      margin: 0;
+      background: #fff;
+      font-family: 'Open Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: auto;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    /* Agent card wrapper */
+    #agent-wrapper {
+      position: relative;
+      z-index: 1;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+    }
+
+    .agent-card {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .agent-avatar-wrapper {
+      flex-shrink: 0;
+      margin-right: 1rem;
+    }
+
+    .agent-avatar {
+      width: 84px;
+      height: auto;
+      border-radius: 12px;
+      object-fit: cover;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }  
+
+    .agent-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .agent-name {
+      font-weight: 600;
+      font-size: 1.3rem;
+      line-height: 1.3;
+      color: #111827;
+    }
+
+    .agent-org {
+      display: inline-block;
+      font-size: 0.8rem;
+      color: #000;
+      border: 1px solid #000;
+      border-radius: 9999px;
+      padding: 3px 8px;
+      font-weight: 500;
+      line-height: 1;
+      margin-top: 6px;
+      width: fit-content;
+    }
+
+    .agent-title {
+      font-size: 0.9rem;
+      color: #4B5563;
+      margin-top: 6px;
+    }
+
+    /* Widget container above card */
+    #webrtc-container {
+      position: relative;
+      z-index: 2;
+    }
+
+    #webrtc-container button.webrtc_widget_content_call_button {
+      position: relative !important;
+      z-index: 3 !important;
+    }
+
+    #webrtc-container,
+    div[class*="webrtc_widget_mobile_container"],
+    div.MuiPaper-root.webrtc_widget_mobile_container {
+      z-index: 3 !important;
+    }
+
+    /* Bubble container sits above the card */
+    .bubble-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0.5rem 1rem;
+    }
+
+    .speech-bubble {
+      max-width: 80%;
+      background: #f1f5f9;
+      color: #111827;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.3;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      position: relative;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .speech-bubble.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .speech-bubble::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      bottom: -6px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #f1f5f9;
+    }
+
+    /* Right-aligned bubble container */
+    .bubble-container.right {
+      align-items: flex-end;
+    }
+
+    /* Caller bubble */
+    .speech-bubble.caller {
+      background: #dbeafe; /* light blue */
+      color: #111827;
+      align-self: flex-end;
+    }
+
+    .speech-bubble.caller::after {
+      left: auto;
+      right: 12px;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #dbeafe;
+    }
+
+
+  </style>
+</head>
+<body>
+
+  <!-- Speech bubble container -->
+  <div class="bubble-container" id="bubble-container">
+    <div class="speech-bubble" id="intro-bubble">
+      Hi, I am Alice, your Digital Pensions Advisor for PensionCo, click the call button to speak with me.
+    </div>
+  </div>
+
+  <!-- Agent Card Header -->
+  <div id="agent-wrapper">
+    <div class="agent-card">
+      <div class="agent-avatar-wrapper">
+        <img id="agent-avatar" src="" alt="Agent" class="agent-avatar" />
+      </div>
+      <div class="agent-info">
+        <div id="agent-name" class="agent-name"></div>
+        <div id="agent-org" class="agent-org"></div>
+        <div id="agent-title" class="agent-title"></div>
+        <div>
+        <img src="NiCE_Cognigy_black&blue.svg" alt="PensionCo" style="height: 15px; vertical-align: middle;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widget will mount here -->
+  <div id="webrtc-container"></div>
+  <script>
+    window.addEventListener("load", () => {
+      const params = new URLSearchParams(window.location.search);
+      const endpoint = decodeURIComponent(params.get("endpoint") || "");
+      const userId = decodeURIComponent(params.get("user") || "webrtcdemo");
+      const label = decodeURIComponent(params.get("label") || "Start a call");
+      const color = decodeURIComponent(params.get("color") || "#2563eb");
+      const logo = decodeURIComponent(params.get("logo") || "");
+      const agent = decodeURIComponent(params.get("agent") || "");
+      const org = decodeURIComponent(params.get("org") || "");
+      const title = decodeURIComponent(params.get("title") || "");
+      const avatar = decodeURIComponent(params.get("avatar") || "");
+
+      // Fill agent card
+      document.getElementById("agent-name").textContent = agent;
+      document.getElementById("agent-org").textContent = org;
+      document.getElementById("agent-title").textContent = title;
+      document.getElementById("agent-avatar").src = avatar;
+
+      if (!endpoint) {
+        document.body.innerHTML += "<p style='color:red; padding:1rem;'>Missing or invalid endpoint</p>";
+        return;
+      }
+
+      window.__COGNIGY_WEBRTC_CONFIG__ = {
+        STATIC_FILES_URL_WITH_PROTOCOL: "https://static-trial.cognigy.ai",
+        ENDPOINT_BASE_URL_WITH_PROTOCOL: "https://endpoint-trial.cognigy.ai"
+      };
+
+      function hideBubbleAndShrink() {
+        const wrap = document.getElementById("bubble-container");
+        if (wrap) wrap.style.display = "none";            // remove the bubble area
+        window.parent.postMessage(
+          { type: "cognigy-meta", event: "collapseIframe", payload: { height: 230 } },
+          "*"
+        );
+      }
+
+      if (window.initWebRTCWidget) {
+        window.initWebRTCWidget(`${endpoint}`, { userId, parentElement: document.getElementById("webrtc-container") })
+  .then(ref => {
+    console.log("WebRTC widget initialized:", ref);
+
+    // Attach to newRTCSession
+    ref?.on("newRTCSession", (session) => {
+      window.parent.postMessage(
+          { type: "cognigy-meta", event: "expandIframe", payload: { extraHeight: 80 } },
+          "*"
+        );
+      console.log("[webrtc.html] newRTCSession started:", session);
+      hideBubbleAndShrink();
+      // Attach INFO handler *inside* the RTC session
+      session?.on("newInfo", (data) => {
+        const body = data?.info?.request?.body;
+        console.log("[webrtc.html] newInfo body:", body);
+        if (!body) return;
+
+        try {
+          const meta = JSON.parse(body);
+
+          if (meta.expandIframe) {
+            window.parent.postMessage({
+              type: "cognigy-meta",
+              event: "expandIframe",
+              payload: { extraHeight: meta.expandIframe }
+            }, "*");
+          }
+
+          if (meta.collapseIframe) {
+            window.parent.postMessage({
+              type: "cognigy-meta",
+              event: "collapseIframe"
+            }, "*");
+          }
+
+          if (meta.updateAddress) {
+            window.parent.postMessage({
+              type: "cognigy-meta",
+              event: "updateAddress",
+              payload: { address: meta.updateAddress }
+            }, "*");
+          }
+
+          if (meta.retirementAge) {
+            window.parent.postMessage({
+              type: "cognigy-meta",
+              event: "updatedRetirementAge",
+              payload: { retirementAge: meta.retirementAge, projectedAtRetirement: meta.projectedAtRetirement }
+            }, "*");
+          }
+
+          if (meta.requestValue) {
+            window.parent.postMessage({
+              type: "cognigy-meta",
+              event: "requestValue",
+              payload: { requestValue: meta.requestValue }
+            }, "*");
+          }
+
+          if (meta.simulatedContribution) {
+            window.parent.postMessage({
+              type: "cognigy-meta",
+              event: "simulatedContribution",
+              payload: { amount: meta.simulatedContribution }
+            }, "*");
+          }
+
+          if (meta.aiAgentOutput) {
+            const bubbleWrap = document.getElementById("bubble-container");
+            const bubble = document.getElementById("intro-bubble");
+
+            if (bubble && bubbleWrap) {
+              bubble.textContent = meta.aiAgentOutput;
+              bubbleWrap.style.display = "flex";
+
+              // Measure full body height (card + bubble)
+              requestAnimationFrame(() => {
+                const totalHeight = document.body.scrollHeight + 80;
+
+                // Send an explicit collapseIframe with the *new fixed height*
+                window.parent.postMessage({
+                  type: "cognigy-meta",
+                  event: "collapseIframe",
+                  payload: { height: totalHeight }
+                }, "*");
+              });
+            }
+          }
+
+          if (meta.callerOutput) {
+            console.log("[webrtc.html] Caller output received:", meta.callerOutput);
+
+            // AI agent bubble container
+            const aiWrap = document.getElementById("bubble-container");
+
+            // Look for existing caller container/bubble
+            let callerWrap = document.getElementById("caller-container");
+            let callerBubble = document.getElementById("caller-bubble");
+
+            if (!callerWrap) {
+              // Create container + bubble once
+              callerWrap = document.createElement("div");
+              callerWrap.id = "caller-container";
+              callerWrap.className = "bubble-container right";
+              callerWrap.style.display = "flex";
+
+              callerBubble = document.createElement("div");
+              callerBubble.id = "caller-bubble";
+              callerBubble.className = "speech-bubble caller";
+              callerWrap.appendChild(callerBubble);
+
+              // Insert caller bubble above AI agent bubble container
+              aiWrap.parentNode.insertBefore(callerWrap, aiWrap);
+            }
+
+            // Update text
+            callerBubble.textContent = meta.callerOutput;
+
+            // Ensure container visible
+            callerWrap.style.display = "flex";
+
+            // Resize iframe to fit new content
+            requestAnimationFrame(() => {
+              const totalHeight = document.body.scrollHeight + 80;
+              window.parent.postMessage({
+                type: "cognigy-meta",
+                event: "collapseIframe",
+                payload: { height: totalHeight }
+              }, "*");
+            });
+
+            const bubbleWrap = document.getElementById("bubble-container");
+            bubbleWrap.style.display = "none";
+          }
+
+          if (meta.verification === "verified") {
+            console.log("[webrtc.html] Verification JSON received:", meta);
+
+            window.parent.postMessage({
+              type: "cognigy-meta",
+              event: "verification",
+              payload: {
+                status: "verified",
+                customer: {
+                  customerId: meta.customerId,
+                  firstName: meta.firstName,
+                  lastName: meta.lastName,
+                  address: meta.address,
+                  retirementAge: meta.retirementAge,
+                  pensionValue: meta.pensionValue
+                },
+                metrics: {
+                  projectedAtRetirement: 936853,
+                  performanceAbs: 19984.77,
+                  performancePct: 27.6
+                },
+                projection: {
+                  ages: [40, 50, 60, 70, 80, 90, 100],
+                  current: [0, 300000, 600000, 936853, 820000, 650000, 360000],
+                  target:  [0, 250000, 500000, 708162, 520000, 320000, 120000]
+                }
+              }
+            }, "*");
+          }
+        } catch (e) {
+          console.warn("Non-JSON INFO body:", body);
+        }
+      });
+
+        session?.on("accepted", () => {
+        console.log("[webrtc.html] Session accepted (call answered)");
+      });
+
+      // shrink iframe back when call ends
+      session?.on("ended", () => {
+        console.log("[webrtc.html] Session ended");
+        const bubbleWrap = document.getElementById("bubble-container");
+        bubbleWrap.style.display = "none";
+        const callerWrap = document.getElementById("caller-container");
+        callerWrap.style.display = "none";
+        window.parent.postMessage({ type: "cognigy-meta", event: "collapseIframe", payload: { height: 150 } }, "*");
+      });
+    });
+
+            /*******************************************
+             * Auto-resize to parent (baseline)
+             *******************************************/
+            function sendResize() {
+              const h = document.body.scrollHeight;
+              const w = document.body.scrollWidth;
+              window.parent.postMessage({
+                type: "cognigy-meta",
+                event: "resize",
+                payload: { width: w, height: h }
+              }, "*");
+            }
+
+            sendResize();
+            const resizeObs = new MutationObserver(sendResize);
+            resizeObs.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+          }).catch(err => {
+            console.error("Widget failed to initialize:", err);
+            document.body.innerHTML += "<p style='color:red; padding:1rem;'>Failed to load widget</p>";
+          });
+      }
+    });
+
+  window.addEventListener("load", () => {
+    // Read language from query string, default to en
+    const qs = new URLSearchParams(window.location.search);
+    const lang = (qs.get("lang") || "en").toLowerCase();
+
+    // Light dictionary for iframe-only copy
+    const T = {
+      en: {
+        intro: "Hi, I am Alice, your Digital Pensions Advisor for PensionCo, click the call button to speak with me.",
+        title: qs.get("title") || "Digital Pensions Advisor",   // keep whatever the parent passed
+        org:   qs.get("org")   || "PensionCo"
+      },
+      de: {
+        intro: "Hallo, ich bin Alice, Ihre digitale Rentenberaterin für PensionCo. Klicken Sie auf die Anruftaste, um mit mir zu sprechen.",
+        title: "Digitale Rentenberaterin",
+        org:   "PensionCo"
+      }
+    };
+
+    // Apply language to <html lang="..."> for a11y
+    document.documentElement.setAttribute("lang", lang === "de" ? "de" : "en");
+
+    // Swap texts (only if the elements exist)
+    const map = T[lang] || T.en;
+    const byId = (id) => document.getElementById(id);
+
+    const introEl = byId("intro-bubble");
+    if (introEl) introEl.textContent = map.intro;
+
+    const titleEl = byId("agent-title");
+    if (titleEl) titleEl.textContent = map.title;
+
+    const orgEl = byId("agent-org");
+    if (orgEl) orgEl.textContent = map.org;
+
+    // Note: the call button label and other in-widget UI are already handled by the parent via the 'label' param.
+    // We do not change the endpoint or re-init anything here.
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PensionCo</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://emeaazurestorageaccount.blob.core.windows.net/uk-gtm/prudence_round.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://emeaazurestorageaccount.blob.core.windows.net/uk-gtm/prudence_round.png">
+
+  <!-- Apple Touch Icon (for iOS home screen bookmarks) -->
+  <link rel="apple-touch-icon" href="https://emeaazurestorageaccount.blob.core.windows.net/uk-gtm/prudence_round.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --brand:#0e7c86; /* Prudence teal */
+      --brand-dark:#0a5b62;
+      --ink:#0b1220;
+      --muted:#5b6474;
+      --card:#ffffff;
+      --bg:#f6f8fb;
+      --pill:#eaf6f7;
+      --success:#12a150;
+      --warning:#f5b301;
+      --accent:#1e88e5;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--ink);
+      background:var(--bg);
+    }
+    /* Header */
+    .site-header{
+      background:#fff;
+      position:sticky; top:0; z-index:20;
+      box-shadow:0 2px 10px rgba(16,24,40,.06);
+    }
+    .container{max-width:1200px;margin:0 auto;padding:0 20px}
+    .nav{
+      display:flex;align-items:center;justify-content:space-between;padding:14px 0;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+     .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: url("https://emeaazurestorageaccount.blob.core.windows.net/uk-gtm/prudence_round.png") 
+                  center/cover no-repeat;
+      display: inline-block;
+    }
+    .brand h1{font-size:18px;margin:0}
+    .nav-links{display:flex;gap:18px;color:var(--muted);font-weight:500}
+    .nav-links a{text-decoration:none;color:var(--muted)}
+    .nav-links a:hover{color:var(--ink)}
+    .cta{display:inline-flex;gap:10px}
+    .btn{
+      appearance:none;border:none;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;
+    }
+    .btn-primary{background:var(--brand);color:#fff}
+    .btn-primary:hover{background:var(--brand-dark)}
+    .btn-ghost{background:;color:var(--brand)}
+    .btn-ghost:hover{background:var(--pill)}
+
+    /* Hero */
+    .hero{
+      position:relative; overflow:hidden;
+      background:url('https://mandg.scene7.com/is/image/mandg/cyclist-trees-hero?qlt=87&wid=1740&ts=1734696150707&$Responsive$&dpr=off') center/cover no-repeat;
+      min-height:360px; display:flex; align-items:center; padding-bottom: 60px;
+    }
+    .hero::after{
+      content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.45));
+    }
+    .hero-inner{position:relative;z-index:1;color:#fff;padding:70px 0}
+    .hero h2{font-size:42px;line-height:1.2;margin:0 0 12px}
+    .hero p{opacity:.95;max-width:720px;font-size:18px;margin:0 0 16px}
+    .hero .cta .btn{box-shadow:0 6px 16px rgba(0,0,0,.2)}
+
+    /* Three columns */
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin: 40px auto}
+    .card{
+      background:var(--card);border-radius:var(--radius);
+      box-shadow:0 6px 24px rgba(16,24,40,.08);
+      padding:18px;
+    }
+    .card h3{margin:8px 0 6px}
+    .muted{color:var(--muted)}
+    .split{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;margin:40px 0}
+
+    /* Dashboard (Section B) */
+    .hidden{display:none !important}
+    .dash-header{display:flex;justify-content:space-between;align-items:center;margin:24px 0}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .stat{
+      background:var(--card);border-radius:var(--radius);padding:18px;
+      box-shadow:0 6px 24px rgba(16,24,40,.08); display:flex; align-items:center; gap:12px
+    }
+    .stat .icon{width:36px;height:36px;border-radius:10px;display:inline-grid;place-items:center;color:#fff;font-weight:700}
+    .icon-a{background:var(--accent)}
+    .icon-b{background:var(--warning)}
+    .icon-c{background:var(--success)}
+    .stat .value{font-size:20px;font-weight:700}
+    .chart-card {
+      background:#fff;
+      border-radius:var(--radius);
+      box-shadow:0 6px 24px rgba(16,24,40,.08);
+      padding:18px;
+      height: 260px;       /* 👈 lock a fixed height */
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-card canvas {
+      flex: 1;             /* 👈 make canvas fill available space */
+      max-height: 200px;   /* optional, extra guard */
+    }
+    .chart-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .small{font-size:12px;color:var(--muted)}
+
+    /* WebRTC iframe */
+    .webrtc-iframe {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 380px;   /* smaller default width */
+      height: 245px;  /* smaller default height */
+      border: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(16,24,40,.24);
+      z-index: 50;
+      background: #fff;
+      /* Animation */
+      animation: slideUpFadeIn 1s ease-out forwards;
+      transition: height 0.3s ease, width 0.3s ease;
+    }
+
+    @media (max-width: 980px){
+      .features{grid-template-columns:1fr}
+      .split{grid-template-columns:1fr}
+      .stats{grid-template-columns:1fr}
+      .webrtc-iframe{width:340px;height:420px}
+      .hero h2{font-size:34px}
+    }
+
+    @keyframes slideUpFadeIn {
+      from {
+        transform: translate(50px, 50px); /* start slightly off bottom-right */
+        opacity: 0;
+      }
+      to {
+        transform: translate(0, 0);
+        opacity: 1;
+      }
+    }
+
+    .pill {
+      background: var(--pill);
+      color: var(--brand);
+      padding: 10px 15px;
+      border-radius: 800px;
+      font-weight: 600;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+
+    .pill.success {
+      background: #e6f9ef;
+      color: var(--success);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .stat.highlight {
+      background: #e6f7f0;        /* light green background */
+      box-shadow: 0 0 0 2px #12a150 inset; /* green border highlight */
+      transition: all 0.3s ease;
+    }
+
+    .value-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;   /* spacing between value and pill */
+    }
+
+    .value-row .pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      line-height: 1;
+      background: #e6f7f0;
+      color: #12a150;
+      display: inline-block;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;   /* space between title and pill */
+    }
+
+    .title-row .pill {
+      font-size: 12px;
+      padding: 10x 15px;
+      line-height: 2;
+      background: #e6f7f0;
+      color: #12a150;
+    }
+
+    #custAddress {
+  font-size: 2em;   /* 3 × base font size */
+  font-weight: 600; /* optional: make it stand out */
+  line-height: 1.4; /* optional: improve spacing */
+}
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">
+        <!-- <span class="logo" aria-hidden="true"></span> -->
+        <h1>
+          <img src="pensionco_logo.png" alt="PensionCo" style="height: 50px; vertical-align: middle;">
+        </h1>
+        <span class="pill">In partnership with: <br>  <img src="NiCE_Cognigy_black&blue.svg" alt="PensionCo" style="height: 15px; vertical-align: middle;">  </span>
+      </div>
+        <nav class="nav-links">
+          <a href="#" id="navPlan">Retirement planning</a>
+          <a href="#" id="navProducts">Products</a>
+          <a href="#" id="navTools">Tools & calculators</a>
+          <a href="#" id="navHelp">Help & support</a>
+        </nav>
+      <div class="cta">
+        <button class="btn btn-ghost" id="fakeLoginBtn" title="For local demo only">Log in</button>
+        <button class="btn btn-primary">Get advice</button>
+        <select id="langToggle" class="btn btn-ghost" title="Language">
+          <option value="en">EN</option>
+          <option value="de">DE</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- SECTION A: Landing -->
+  <section id="landing" class="hero">
+    <div class="container hero-inner">
+      <h2 id="heroTitle">Pension and investment support for life</h2>
+      <p id="heroDesc">Let Alice help with your money, every step of the way. When you are ready, verify your details to see your personalised dashboard.</p>
+      <div class="cta">
+        <button class="btn btn-primary" id="verifyCTA">Access your policy</button>
+        <button class="btn btn-ghost" id="exploreCTA">Explore investments</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="features">
+      <div class="card">
+        <h3 id="card1Title">Get financial guidance</h3>
+        <p class="muted" id="card1Text">We explain your options in clear language and connect you to a regulated adviser when needed.</p>
+        <button class="btn btn-primary" id="card1Btn">Meet with an adviser</button>
+      </div>
+      <div class="card">
+        <h3 id="card2Title">Explore bonds & investments</h3>
+        <p class="muted" id="card2Text">Find a range of solutions to help meet your financial goals.</p>
+        <button class="btn btn-primary" id="card2Btn">Find out more</button>
+      </div>
+      <div class="card">
+        <h3 id="card3Title">Manage your money</h3>
+        <p class="muted" id="card3Text">Check your balance, view documents and securely contact us.</p>
+        <button class="btn btn-primary" id="manageCTA">Access your policy</button>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="card">
+        <h3 id="howTitle">How verification works</h3>
+        <p class="muted" id="howText">When you start a conversation, our agent will ask a few details to confirm your identity. Once verified, your personalised dashboard will appear here — without leaving or reloading the page, so your call stays connected.</p>
+      </div>
+      <div class="card">
+        <h3 id="secTitle">Security first</h3>
+        <p class="muted" id="secText">We never show personal details until verification succeeds. If your request is regulated, we will connect you with a licensed adviser.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- SECTION B: Dashboard (hidden until verified) -->
+  <section id="dashboard" class="container hidden" aria-live="polite">
+    <div class="dash-header">
+      <div>
+        <div class="pill">Verified</div>
+        <h2 id="custName" style="margin:6px 0 0">Welcome back</h2>
+        <div class="small" id="custId">Customer ID: —</div>
+        <div class="small" id="custAddressWrapper">
+          <span id="custAddress">Address: —</span>
+          <span id="addressUpdated" class="pill success hidden">Updated successfully</span>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-ghost" id="backToLanding">Sign out</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="icon icon-a">≋</div>
+        <div>
+          <div class="muted">Current balance</div>
+          <div class="value" id="valBalance">—</div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="icon icon-b">↑</div>
+        <div>
+          <div class="muted">Projected at retirement</div>
+          <div class="value-row">
+            <div class="value" id="valProjected">—</div>
+            <span id="projUpdatedPill" class="pill" style="display:none">Updated</span>
+          </div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="icon icon-c">▮▮</div>
+        <div>
+          <div class="muted">Performance</div>
+          <div class="value" id="valPerformance">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin:18px 0 80px">
+      <div class="chart-title">
+        <div class="title-row">
+          <h3 id="retireTitle" style="margin:0">Retire at —</h3>
+          <span id="retireUpdatedPill" class="pill" style="display:none">Updated Successfully</span>
+        </div>
+        <div class="small">Current projection vs target</div>
+      </div>
+      <canvas id="projectionChart" height="120"></canvas>
+    </div>
+  </section>
+
+  <!-- Bottom-right WebRTC iframe -->
+  <iframe id="webrtcFrame" class="webrtc-iframe" title="Prudence Pensions WebRTC"></iframe>
+
+  <script>
+    /***********************
+     * CONFIG (i18n + endpoints)
+     ***********************/
+    const ENDPOINTS = {
+      en: "https://endpoint-trial.cognigy.ai/a86d6c7a19d1c6654e6bfc991fc72aaed652989a7037ecc2a90292d9e3b33b22",
+      de: "https://endpoint-trial.cognigy.ai/c3ba2cc5aaf4468317af856947784e9948a2e452ea36eacaa063b44cd6306538"
+    };
+
+    // Text dictionary (expand any time)
+    const T = {
+      en: {
+        navPlan: "Retirement planning",
+        navProducts: "Products",
+        navTools: "Tools & calculators",
+        navHelp: "Help & support",
+        heroTitle: "Pension and investment support for life",
+        heroDesc: "Let Alice help with your money, every step of the way. When you are ready, verify your details to see your personalised dashboard.",
+        verifyCTA: "Access your policy",
+        exploreCTA: "Explore investments",
+        card1Title: "Get financial guidance",
+        card1Text: "We explain your options in clear language and connect you to a regulated adviser when needed.",
+        card1Btn: "Meet with an adviser",
+        card2Title: "Explore bonds & investments",
+        card2Text: "Find a range of solutions to help meet your financial goals.",
+        card2Btn: "Find out more",
+        card3Title: "Manage your money",
+        card3Text: "Check your balance, view documents and securely contact us.",
+        howTitle: "How verification works",
+        howText: "When you start a conversation, our agent will ask a few details to confirm your identity. Once verified, your personalised dashboard will appear here — without leaving or reloading the page, so your call stays connected.",
+        secTitle: "Security first",
+        secText: "We never show personal details until verification succeeds. If your request is regulated, we will connect you with a licensed adviser.",
+        callLabel: "Talk to Alice",
+        getAdvice: "Get advice",
+        login: "Log in"
+      },
+      de: {
+        navPlan: "Ruhestandsplanung",
+        navProducts: "Produkte",
+        navTools: "Tools und Rechner",
+        navHelp: "Hilfe und Support",
+        heroTitle: "Renten- und Investment-Unterstützung fürs Leben",
+        heroDesc: "Lassen Sie Alice Sie bei Ihren Finanzen Schritt für Schritt begleiten. Wenn Sie soweit sind, verifizieren Sie Ihre Daten, um Ihr persönliches Dashboard zu sehen.",
+        verifyCTA: "Auf Ihre Police zugreifen",
+        exploreCTA: "Investments erkunden",
+        card1Title: "Finanzielle Beratung erhalten",
+        card1Text: "Wir erklären Ihre Optionen in klarer Sprache und verbinden Sie bei Bedarf mit einer regulierten Beraterin oder einem regulierten Berater.",
+        card1Btn: "Termin mit Beratung",
+        card2Title: "Anleihen und Investments erkunden",
+        card2Text: "Finden Sie Lösungen, die zu Ihren finanziellen Zielen passen.",
+        card2Btn: "Mehr erfahren",
+        card3Title: "Ihr Geld verwalten",
+        card3Text: "Prüfen Sie Ihr Guthaben, sehen Sie Dokumente ein und kontaktieren Sie uns sicher.",
+        howTitle: "So funktioniert die Verifizierung",
+        howText: "Wenn Sie ein Gespräch starten, fragt unsere Agentin nach einigen Details zur Identitätsprüfung. Nach erfolgreicher Verifizierung erscheint Ihr persönliches Dashboard hier – ohne die Seite zu verlassen, sodass der Anruf verbunden bleibt.",
+        secTitle: "Sicherheit zuerst",
+        secText: "Wir zeigen keine persönlichen Daten, bevor die Verifizierung erfolgreich war. Bei regulierten Anliegen verbinden wir Sie mit einer lizenzierten Beratung.",
+        callLabel: "Mit Alice sprechen",
+        getAdvice: "Beratung erhalten",
+        login: "Anmelden"
+      }
+    };
+
+    // Build the WebRTC iframe URL for a given language
+    function buildIframeSrc(lang) {
+      const params = new URLSearchParams({
+        endpoint: ENDPOINTS[lang] || ENDPOINTS.en,
+        user: "pensionco",
+        label: T[lang]?.callLabel || T.en.callLabel,
+        color: "#26890d",
+        logo: "https://emeaazurestorageaccount.blob.core.windows.net/uk-gtm/prudence_round.png",
+        agent: "Alice",
+        org: "PensionCo",
+        title: "Digital Pensions Advisor",
+        avatar: "https://emeaazurestorageaccount.blob.core.windows.net/uk-gtm/prudence_optimized.png",
+        lang: lang
+      });
+      return `./webrtc.html?${params.toString()}`;
+    }
+
+    // Apply translated text content to the page
+    function applyTranslations(lang) {
+      const map = T[lang] || T.en;
+      for (const [id, text] of Object.entries(map)) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      }
+      // Update html lang attribute for accessibility/SEO
+      document.documentElement.setAttribute("lang", lang === "de" ? "de" : "en");
+    }
+
+    // Helpers
+    const fmtGBP = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 2 }).format(n);
+
+    function applyRetirementTaper(fitted, anchorIdx, anchorVal) {
+      const endIdx = fitted.length - 1;
+      const yearsAfterRetire = endIdx - anchorIdx;
+
+      for (let i = anchorIdx + 1; i <= endIdx; i++) {
+        const t = (i - anchorIdx) / yearsAfterRetire; // 0 → 1
+        fitted[i] = Math.max(0, anchorVal * (1 - t)); // linear taper down to 0
+      }
+      return fitted;
+    }
+
+    // Keep a clean template of the original "current projection" shape
+    let baseAges = null;
+    let baseCurrentShape = null;
+    let baseProjectedAtRetirement = 0; // baseline stat from Cognigy
+
+    // parse "£1,234" -> 1234
+    const parseGBP = (s) => Number(String(s).replace(/[^\d.-]/g, "")) || 0;
+
+    // Fit the whole series so that series[leftIdx]=leftVal and series[anchorIdx]=anchorVal
+    function scaleSeriesToAnchors(series, leftIdx, leftVal, anchorIdx, anchorVal){
+      const yL = series[leftIdx] ?? 0;
+      const yA = series[anchorIdx] ?? 0;
+
+      // Degenerate case: if the two template anchors are equal, fall back to simple index interpolation
+      if (yA === yL) {
+        const span = (anchorIdx - leftIdx) || 1;
+        return series.map((_, i) => {
+          if (i <= leftIdx) return leftVal;
+          if (i >= anchorIdx) return anchorVal;
+          const t = (i - leftIdx) / span;
+          return leftVal + t * (anchorVal - leftVal);
+        });
+      }
+
+      // Affine fit preserving shape
+      const a = (anchorVal - leftVal) / (yA - yL);
+      const b = leftVal - a * yL;
+      return series.map((y, i) => {
+        if (i === leftIdx)  return leftVal;
+        if (i === anchorIdx) return anchorVal;
+        return Math.max(0, a * y + b);
+      });
+    }
+
+    /***********************
+     * DOM
+     ***********************/
+    const $landing = document.getElementById("landing");
+    const $dashboard = document.getElementById("dashboard");
+    const $custName = document.getElementById("custName");
+    const $custId = document.getElementById("custId");
+    const $custAddress = document.getElementById("custAddress");
+    const $valBalance = document.getElementById("valBalance");
+    const $valProjected = document.getElementById("valProjected");
+    const $valPerformance = document.getElementById("valPerformance");
+    const $retireTitle = document.getElementById("retireTitle");
+    const $webrtcFrame = document.getElementById("webrtcFrame");
+    const $fakeLoginBtn = document.getElementById("fakeLoginBtn");
+    const $verifyCTA = document.getElementById("verifyCTA");
+    const $manageCTA = document.getElementById("manageCTA");
+    const $backToLanding = document.getElementById("backToLanding");
+
+    const savedLang = localStorage.getItem("lang") || "en";
+    const $langToggle = document.getElementById("langToggle");
+    if ($langToggle) $langToggle.value = savedLang;
+
+    // Initial language + iframe
+    applyTranslations(savedLang);
+    $webrtcFrame.src = buildIframeSrc(savedLang);
+
+    // Toggle handler
+    $langToggle?.addEventListener("change", (e) => {
+      const lang = e.target.value === "de" ? "de" : "en";
+      localStorage.setItem("lang", lang);
+      applyTranslations(lang);
+      // Rebuild iframe with the other Cognigy endpoint
+      $webrtcFrame.src = buildIframeSrc(lang);
+    });
+
+    /***********************
+     * Chart
+     ***********************/
+    let projectionChart;
+    function renderChart(seriesAges, currentSeries, targetSeries){
+      baseAges = seriesAges.slice();
+      baseCurrentShape = currentSeries.slice();  // <-- save template
+
+      const ctx = document.getElementById("projectionChart");
+      if (projectionChart) projectionChart.destroy();
+      projectionChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: seriesAges.map(a => `Age ${a}`),
+          datasets: [
+            { label: "Current projection", data: currentSeries, fill: true, tension: 0.35 },
+            { label: "Your target",        data: targetSeries, borderDash: [6,6], tension: 0.35 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "top" }, tooltip: { mode: "index", intersect: false } },
+          interaction: { mode: "nearest", intersect: false },
+          scales: {
+            y: {
+              ticks: { callback: (v) => "£" + Intl.NumberFormat("en-GB").format(v) },
+              suggestedMax: Math.max(...currentSeries, ...targetSeries) * 1.1
+            }
+          }
+        }
+      });
+    }
+
+    /***********************
+     * Section toggle
+     ***********************/
+    function showDashboard(){ $landing.classList.add("hidden"); $dashboard.classList.remove("hidden"); }
+    function showLanding(){ $dashboard.classList.add("hidden"); $landing.classList.remove("hidden"); }
+
+    $backToLanding.addEventListener("click", showLanding);
+    $verifyCTA.addEventListener("click", () => {
+      // Demo only: ask the iframe to start a call / verification flow if you want
+      // Here we just show a toast-like effect by focusing the iframe
+      $webrtcFrame.contentWindow?.focus?.();
+    });
+    $manageCTA.addEventListener("click", () => $webrtcFrame.contentWindow?.focus?.());
+    $fakeLoginBtn.addEventListener("click", () => {
+      // Local demo fallback: simulate a verification message as if it came from Cognigy
+      simulateVerificationMessage();
+    });
+
+    let activeContribution = 0;
+    function getRetirementIndex(labels, retirementAge) {
+      for (let i = 0; i < labels.length; i++) {
+        if (labels[i] >= retirementAge) return i;
+      }
+      return labels.length - 1; // fallback to last
+    }
+
+    function updateProjectionChart() {
+      if (!projectionChart || !baseCurrentShape || !baseAges) return;
+
+      const labels = baseAges.slice(); // [40,50,...,100]
+      const retirementAge = parseInt($retireTitle.textContent.replace(/\D/g, ""), 10);
+      const anchorIdx = getRetirementIndex(labels, retirementAge);
+
+      // Base stat value
+     // Always use the clean baseline + any simulated contribution
+    // compound contribution only until retirement
+      const yearsToRetire = retirementAge - labels[0]; 
+      const interestRate = 0.05; // 5%
+      const extraAtRetirement = activeContribution > 0
+        ? Math.round(activeContribution * Math.pow(1 + interestRate, yearsToRetire))
+        : 0;
+
+      const newProjectedValue = baseProjectedAtRetirement + extraAtRetirement;
+      const currentBalance = parseGBP($valBalance.textContent);
+      const leftVal = currentBalance + activeContribution;
+
+
+      // Update projected stat
+      $valProjected.textContent = fmtGBP(newProjectedValue);
+
+      // Fit curve
+      const template = baseCurrentShape.slice();
+
+      // Flatten after retirement
+      let fitted = scaleSeriesToAnchors(template, 0, leftVal, anchorIdx, newProjectedValue);
+      fitted = applyRetirementTaper(fitted, anchorIdx, newProjectedValue);
+      projectionChart.data.datasets[0].data = fitted;
+
+      const maxY = Math.max(...fitted, ...(projectionChart.data.datasets[1]?.data || []));
+      projectionChart.options.scales.y.suggestedMax = Math.ceil(maxY / 100000) * 100000;
+
+      projectionChart.update();
+    }
+
+    /***********************
+     * Metadata bridge (postMessage from iframe)
+     *
+     * EXPECTED MESSAGE SHAPE FROM IFRAME (type: "cognigy-meta"):
+     * {
+     *   type: "cognigy-meta",
+     *   event: "verification",
+     *   payload: {
+     *     status: "verified",
+     *     customer: { customerId, firstName, lastName, address, retirementAge, pensionValue },
+     *     metrics: {
+     *       projectedAtRetirement, performanceAbs, performancePct
+     *     },
+     *     projection: {
+     *       ages: [40, 50, 60, 70, 80, 90, 100],
+     *       current: [ ... ],
+     *       target:  [ ... ]
+     *     }
+     *   }
+     * }
+     ***********************/
+    window.addEventListener("message", (e) => {
+      console.log("[index.html] Received postMessage:", e.data);
+      const data = e.data;
+      if (!data || data.type !== "cognigy-meta") return;
+
+      if (data.event === "verification" && data.payload?.status === "verified") {
+        console.log("[index.html] Verification received, showing dashboard");
+        const p = data.payload;
+        const c = p.customer || {};
+        const m = p.metrics || {};
+        const g = p.projection || {};
+
+        // Fill header
+        $custName.textContent = `Welcome back, ${c.firstName ?? ""} ${c.lastName ?? ""}`.trim();
+        $custId.textContent = `Customer ID: ${c.customerId ?? "—"}`;
+        $custAddress.textContent = `Address: ${c.address ?? "—"}`;
+
+        // Fill stats
+        $valBalance.textContent = fmtGBP(Number(c.pensionValue ?? 0));
+        $valProjected.textContent = fmtGBP(Number(m.projectedAtRetirement ?? 0));
+        baseProjectedAtRetirement = Number(m.projectedAtRetirement ?? 0);
+        if (m.performanceAbs != null && m.performancePct != null){
+          const sign = Number(m.performanceAbs) >= 0 ? "+" : "−";
+          $valPerformance.textContent = `${sign}${fmtGBP(Math.abs(Number(m.performanceAbs)))} (${Number(m.performancePct).toFixed(1)}%)`;
+        } else {
+          $valPerformance.textContent = "—";
+        }
+
+        // Chart
+        const retireAt = Number(c.retirementAge ?? 68);
+        $retireTitle.textContent = `Retire at ${retireAt}`;
+        const ages = g.ages ?? [40, 50, 60, 70, 80, 90, 100];
+        let current = g.current ?? [0, 250000, 500000, 950000, 800000, 600000, 350000];
+        const target  = g.target  ?? [0, 220000, 440000, 708162, 520000, 320000, 120000];
+
+          // 🔑 Fix: force left-most value to equal pension balance
+        const pensionVal = Number(c.pensionValue ?? 0);
+        current = current.slice();       // copy so we don’t mutate original
+        current[0] = pensionVal;
+
+        renderChart(ages, current, target);
+
+        showDashboard();
+      }
+
+      if (data.event === "updateAddress") {
+        console.log("[index.html] UpdateAddress received:", data.payload.address);
+        
+        const $address = document.getElementById("custAddress");
+        const $pill = document.getElementById("addressUpdated");
+
+        if ($address) {
+          $address.textContent = `Address: ${data.payload.address}`;
+        }
+
+        if ($pill) {
+          $pill.classList.remove("hidden");
+          // Auto-hide after 3 seconds
+          setTimeout(() => {
+            $pill.classList.add("hidden");
+          }, 6000);
+        }
+      }
+
+        if (data.event === "updatedRetirementAge") {
+          const newAge        = Number(data.payload?.retirementAge);
+          const newProjection = Number(data.payload?.projectedAtRetirement);
+
+          // 1) Title + pill near chart title
+          if (!Number.isNaN(newAge)) {
+            $retireTitle.textContent = `Retire at ${newAge}`;
+            let pill = document.getElementById("retireUpdatedPill");
+            if (!pill) {
+              pill = document.createElement("span");
+              pill.id = "retireUpdatedPill";
+              pill.className = "pill";
+              pill.style.marginLeft = "12px";
+              $retireTitle.insertAdjacentElement("afterend", pill);
+            }
+            pill.textContent = "Updated Successfully";
+            pill.style.display = "inline-block";
+            setTimeout(() => { pill.style.display = "none"; }, 6000);
+            updateProjectionChart(); // <-- ensures it recalculates with new anchor  
+          }
+
+          // 2) Stat value + pill
+          if (!Number.isNaN(newProjection)) {
+            $valProjected.textContent = fmtGBP(newProjection);
+            baseProjectedAtRetirement = newProjection; // reset baseline for new age
+            let p2 = document.getElementById("projUpdatedPill");
+            if (!p2) {
+              p2 = document.createElement("span");
+              p2.id = "projUpdatedPill";
+              p2.className = "pill";
+              p2.style.marginLeft = "8px";
+              $valProjected.insertAdjacentElement("afterend", p2);
+            }
+            p2.textContent = "Updated";
+            p2.style.display = "inline-block";
+            setTimeout(() => { p2.style.display = "none"; }, 6000);
+            updateProjectionChart(); 
+          }
+
+          // 3) Re-fit BLUE projection line properly
+          if (projectionChart && baseCurrentShape && baseAges) {
+            const labels = projectionChart.data.labels.map(l =>
+              parseInt(l.replace("Age ", ""), 10)
+            ); // [40, 50, 60, ...]
+            const idx = labels.indexOf(newAge);
+
+            if (idx !== -1) {
+              // Current balance (from stat card)
+              const currentBalance = parseGBP($valBalance.textContent);
+
+              // Template to re-fit (don’t mutate baseCurrentShape)
+              const template = baseCurrentShape.slice();
+
+              // Anchors
+              const leftIdx = 0;
+              const leftVal = currentBalance;
+              const anchorIdx = idx;             // <-- now the index for retirement age
+              const anchorVal = newProjection;
+
+              let fitted = scaleSeriesToAnchors(template, 0, leftVal, anchorIdx, newProjection);
+              fitted = applyRetirementTaper(fitted, anchorIdx, newProjection);
+              projectionChart.data.datasets[0].data = fitted;
+
+              // Adjust y-axis to keep chart scaled correctly
+              const maxY = Math.max(...fitted, ...(projectionChart.data.datasets[1]?.data || []));
+              projectionChart.options.scales.y.suggestedMax = Math.ceil(maxY / 100000) * 100000;
+
+              projectionChart.update();
+            } else {
+              console.warn(`[index.html] Retirement age ${newAge} not in chart labels`, labels);
+            }
+          }
+        }
+
+        if (data.event === "requestValue" && data.payload?.requestValue === true) {
+          console.log("[index.html] requestValue received");
+
+          // find the stat card that contains valBalance
+          const balanceStat = $valBalance.closest(".stat");
+          if (balanceStat) {
+            balanceStat.classList.add("highlight");
+
+            // remove highlight after 6 seconds
+            setTimeout(() => {
+              balanceStat.classList.remove("highlight");
+            }, 6000);
+          }
+        }
+
+        if (data.event === "simulatedContribution") {
+          const contrib = Number(data.payload?.amount || 0);
+          if (isNaN(contrib) || contrib <= 0) return;
+
+          const balanceEl = document.getElementById("valBalance");
+          let contribSpan = document.getElementById("simulatedContrib");
+          let closeBtn = document.getElementById("simulatedContribClose");
+
+          // Display green + contribution
+          if (!contribSpan) {
+            contribSpan = document.createElement("span");
+            contribSpan.id = "simulatedContrib";
+            contribSpan.style.color = "green";
+            contribSpan.style.fontWeight = "600";
+            contribSpan.style.marginLeft = "6px";
+            balanceEl.insertAdjacentElement("afterend", contribSpan);
+
+            // Add close button
+            closeBtn = document.createElement("button");
+            closeBtn.id = "simulatedContribClose";
+            closeBtn.textContent = "×";
+            closeBtn.style.marginLeft = "6px";
+            closeBtn.style.cursor = "pointer";
+            closeBtn.style.border = "none";
+            closeBtn.style.background = "transparent";
+            closeBtn.style.fontSize = "14px";
+            balanceEl.insertAdjacentElement("afterend", closeBtn);
+
+            closeBtn.addEventListener("click", () => {
+              contribSpan.remove();
+              closeBtn.remove();
+              activeContribution = 0;
+              updateProjectionChart();
+            });
+          }
+
+          contribSpan.textContent = `+ ${fmtGBP(contrib)}`;
+          activeContribution = contrib;
+
+          updateProjectionChart();
+        }
+
+    });
+
+      /***********************
+       * Resize listener (iframe -> parent)
+       ***********************/
+      let manualResize = false;
+
+      window.addEventListener("message", (e) => {
+        if (e.data?.type !== "cognigy-meta") return;
+
+        if (e.data.event === "resize" && !manualResize) {
+          const { width, height } = e.data.payload;
+          if (width) $webrtcFrame.style.width = width + "px";
+          if (height) $webrtcFrame.style.height = height + "px";
+        }
+
+        if (e.data.event === "expandIframe") {
+          manualResize = true;
+          const currentHeight = parseInt(getComputedStyle($webrtcFrame).height, 10) || 240;
+          const extra = e.data.payload?.extraHeight || 50;
+          $webrtcFrame.style.height = (currentHeight + extra) + "px";
+        }
+
+        if (e.data.event === "collapseIframe") {
+          manualResize = true ;
+          const baseHeight = (e.data.payload && e.data.payload.height) ? e.data.payload.height : 245;
+          $webrtcFrame.style.height = baseHeight + "px";
+        }
+      });
+  </script>
+</body>
+</html>
