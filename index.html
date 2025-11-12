@@ -520,6 +520,7 @@
       applyTranslations(lang);
       // Rebuild iframe with the other Cognigy endpoint
       $webrtcFrame.src = buildIframeSrc(lang);
+      applyDashboardTranslations(); 
     });
 
     /***********************
@@ -683,6 +684,15 @@
 
         renderChart(ages, current, target);
 
+        applyDashboardTranslations({
+          firstName: c.firstName,
+          lastName:  c.lastName,
+          customerId: c.customerId,
+          address: c.address,
+          retirementAge: c.retirementAge
+        });
+
+
         showDashboard();
       }
 
@@ -693,9 +703,9 @@
         const $pill = document.getElementById("addressUpdated");
 
         if ($address) {
-          $address.textContent = `Address: ${data.payload.address}`;
+          $address.textContent = `${DASH_T[getLang()].address}: ${data.payload.address}`;
         }
-
+        
         if ($pill) {
           $pill.classList.remove("hidden");
           // Auto-hide after 3 seconds
@@ -835,6 +845,8 @@
 
           updateProjectionChart();
         }
+
+        applyDashboardTranslations({ retirementAge: newAge });
 
     });
 
