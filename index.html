@@ -865,6 +865,136 @@
           $webrtcFrame.style.height = baseHeight + "px";
         }
       });
+
+       // 1) Tiny dictionary for dashboard-only strings
+  const DASH_T = {
+    en: {
+      verified: "Verified",
+      welcomeBack: "Welcome back,",
+      customerId: "Customer ID",
+      address: "Address",
+      addressUpdated: "Updated successfully",
+      signOut: "Sign out",
+      currentBalance: "Current balance",
+      projectedAtRetirement: "Projected at retirement",
+      performance: "Performance",
+      retireAt: "Retire at",
+      chartSubtitle: "Current projection vs target",
+      updated: "Updated",
+      updatedSuccessfully: "Updated Successfully"
+    },
+    de: {
+      verified: "Verifiziert",
+      welcomeBack: "Willkommen zurück,",
+      customerId: "Kundennummer",
+      address: "Adresse",
+      addressUpdated: "Erfolgreich aktualisiert",
+      signOut: "Abmelden",
+      currentBalance: "Aktuelles Guthaben",
+      projectedAtRetirement: "Prognose zum Rentenbeginn",
+      performance: "Performance",
+      retireAt: "Ruhestand mit",
+      chartSubtitle: "Aktuelle Prognose im Vergleich zum Ziel",
+      updated: "Aktualisiert",
+      updatedSuccessfully: "Erfolgreich aktualisiert"
+    }
+  };
+
+  // Helper to get the current lang the same way you store it for the iframe
+  function getLang() {
+    return (localStorage.getItem("lang") || "en").toLowerCase() === "de" ? "de" : "en";
+  }
+
+  // 2) Apply translations to the dashboard (no HTML changes required)
+  function applyDashboardTranslations(opts = {}) {
+    const lang = getLang();
+    const t = DASH_T[lang];
+
+    // Pill "Verified" (first pill inside dash header)
+    const verifiedPill = document.querySelector("#dashboard .dash-header .pill");
+    if (verifiedPill) verifiedPill.textContent = t.verified;
+
+    // Welcome back + name (use provided name if passed from verification)
+    const nameEl = document.getElementById("custName");
+    if (nameEl) {
+      const fullName = (opts.firstName || "") + (opts.lastName ? " " + opts.lastName : "");
+      // If we have a name from verification, use "Welcome back, <name>"
+      // otherwise keep whatever is there (e.g., original "Welcome back")
+      if (opts.firstName || opts.lastName) {
+        nameEl.textContent = `${t.welcomeBack} ${fullName}`.trim();
+      }
+    }
+
+    // Customer ID and Address lines
+    const idEl = document.getElementById("custId");
+    if (idEl) {
+      const idVal = (opts.customerId != null) ? String(opts.customerId) : (idEl.textContent.split(": ").slice(1).join(": ") || "—");
+      idEl.textContent = `${t.customerId}: ${idVal || "—"}`;
+    }
+
+    const addrSpan = document.getElementById("custAddress");
+    if (addrSpan) {
+      // Preserve the value already shown unless a fresh one is provided
+      const currentAddrVal = addrSpan.textContent.split(": ").slice(1).join(": ") || "—";
+      const addrVal = (opts.address != null) ? opts.address : currentAddrVal;
+      addrSpan.textContent = `${t.address}: ${addrVal || "—"}`;
+    }
+
+    const addrUpdated = document.getElementById("addressUpdated");
+    if (addrUpdated) addrUpdated.textContent = t.addressUpdated;
+
+    // Sign out button
+    const signOutBtn = document.getElementById("backToLanding");
+    if (signOutBtn) signOutBtn.textContent = t.signOut;
+
+    // Stat labels (ordered nodes)
+    const statLabels = document.querySelectorAll("#dashboard .stats .muted");
+    if (statLabels[0]) statLabels[0].textContent = t.currentBalance;
+    if (statLabels[1]) statLabels[1].textContent = t.projectedAtRetirement;
+    if (statLabels[2]) statLabels[2].textContent = t.performance;
+
+    // Chart title "Retire at X"
+    const retireTitle = document.getElementById("retireTitle");
+    if (retireTitle) {
+      // Try to keep the age number that is already there
+      const m = retireTitle.textContent.match(/\d+/);
+      const age = opts.retirementAge != null ? Number(opts.retirementAge) : (m ? Number(m[0]) : null);
+      retireTitle.textContent = age ? `${t.retireAt} ${age}` : `${t.retireAt} —`;
+    }
+
+    // Chart subtitle
+    const chartSubtitle = document.querySelector(".chart-card .small");
+    if (chartSubtitle) chartSubtitle.textContent = t.chartSubtitle;
+
+    // Update pills near projection and retirement age
+    const projUpdatedPill = document.getElementById("projUpdatedPill");
+    if (projUpdatedPill) projUpdatedPill.textContent = t.updated;
+
+    const retireUpdatedPill = document.getElementById("retireUpdatedPill");
+    if (retireUpdatedPill) retireUpdatedPill.textContent = t.updatedSuccessfully;
+  }
+
+  // 3) Call this in three places:
+
+  // a) Immediately after your current verification handler fills the dashboard
+  //    Find your message listener where you handle event === "verification"
+  //    and append:
+  //    applyDashboardTranslations({
+  //      firstName: c.firstName,
+  //      lastName:  c.lastName,
+  //      customerId: c.customerId,
+  //      address: c.address,
+  //      retirementAge: c.retirementAge
+  //    });
+
+  // b) When the retirement age gets updated (event === "updatedRetirementAge"),
+  //    after you change the chart/title, call:
+  //    applyDashboardTranslations({ retirementAge: newAge });
+
+  // c) When your language toggle changes in index.html:
+  //    after you set localStorage.setItem("lang", lang) and update the iframe,
+  //    also call:
+  //    applyDashboardTranslations();
   </script>
 </body>
 </html>
