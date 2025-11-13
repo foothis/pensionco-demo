@@ -440,7 +440,7 @@
     }
 
     // Helpers
-    const fmtGBP = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 2 }).format(n);
+    // const fmtGBP = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 2 }).format(n);
 
     function applyRetirementTaper(fitted, anchorIdx, anchorVal) {
       const endIdx = fitted.length - 1;
@@ -459,7 +459,7 @@
     let baseProjectedAtRetirement = 0; // baseline stat from Cognigy
 
     // parse "£1,234" -> 1234
-    const parseGBP = (s) => Number(String(s).replace(/[^\d.-]/g, "")) || 0;
+    // const parseGBP = (s) => Number(String(s).replace(/[^\d.-]/g, "")) || 0;
 
     // Fit the whole series so that series[leftIdx]=leftVal and series[anchorIdx]=anchorVal
     function scaleSeriesToAnchors(series, leftIdx, leftVal, anchorIdx, anchorVal){
@@ -527,6 +527,10 @@
         projectionChart.data.datasets[0].label = t.chartCurrentLabel;
         projectionChart.data.datasets[1].label = t.chartTargetLabel;
         projectionChart.update();
+      }
+      if (projectionChart) {
+        projectionChart.options.scales.y.ticks.callback = (v) => fmtMoney(v);
+        projectionChart.update();
       } 
     });
 
@@ -557,7 +561,8 @@
           interaction: { mode: "nearest", intersect: false },
           scales: {
             y: {
-              ticks: { callback: (v) => "£" + Intl.NumberFormat("en-GB").format(v) },
+              // ticks: { callback: (v) => "£" + Intl.NumberFormat("en-GB").format(v) },
+              ticks: { callback: (v) => fmtMoney(v) },
               suggestedMax: Math.max(...currentSeries, ...targetSeries) * 1.1
             }
           }
@@ -608,12 +613,14 @@
         : 0;
 
       const newProjectedValue = baseProjectedAtRetirement + extraAtRetirement;
-      const currentBalance = parseGBP($valBalance.textContent);
+      // const currentBalance = parseGBP($valBalance.textContent);
+      const currentBalance = parseMoney($valBalance.textContent);
       const leftVal = currentBalance + activeContribution;
 
 
       // Update projected stat
-      $valProjected.textContent = fmtGBP(newProjectedValue);
+      // $valProjected.textContent = fmtGBP(newProjectedValue);
+      $valProjected.textContent = fmtMoney(newProjectedValue);
 
       // Fit curve
       const template = baseCurrentShape.slice();
@@ -668,12 +675,15 @@
         $custAddress.textContent = `Address: ${c.address ?? "—"}`;
 
         // Fill stats
-        $valBalance.textContent = fmtGBP(Number(c.pensionValue ?? 0));
-        $valProjected.textContent = fmtGBP(Number(m.projectedAtRetirement ?? 0));
+        // $valProjected.textContent = fmtGBP(Number(m.projectedAtRetirement ?? 0));
+        // $valBalance.textContent = fmtGBP(Number(c.pensionValue ?? 0));
+        $valBalance.textContent = fmtMoney(Number(c.pensionValue ?? 0));
+        $valProjected.textContent = fmtMoney(Number(m.projectedAtRetirement ?? 0));
         baseProjectedAtRetirement = Number(m.projectedAtRetirement ?? 0);
         if (m.performanceAbs != null && m.performancePct != null){
           const sign = Number(m.performanceAbs) >= 0 ? "+" : "−";
-          $valPerformance.textContent = `${sign}${fmtGBP(Math.abs(Number(m.performanceAbs)))} (${Number(m.performancePct).toFixed(1)}%)`;
+          // $valPerformance.textContent = `${sign}${fmtGBP(Math.abs(Number(m.performanceAbs)))} (${Number(m.performancePct).toFixed(1)}%)`;
+          $valPerformance.textContent = `${sign}${fmtMoney(Math.abs(Number(m.performanceAbs)))} (${Number(m.performancePct).toFixed(1)}%)`;
         } else {
           $valPerformance.textContent = "—";
         }
@@ -746,7 +756,8 @@
 
           // 2) Stat value + pill
           if (!Number.isNaN(newProjection)) {
-            $valProjected.textContent = fmtGBP(newProjection);
+            // $valProjected.textContent = fmtGBP(newProjection);
+            $valProjected.textContent = fmtMoney(newProjection);
             baseProjectedAtRetirement = newProjection; // reset baseline for new age
             let p2 = document.getElementById("projUpdatedPill");
             if (!p2) {
@@ -771,7 +782,8 @@
 
             if (idx !== -1) {
               // Current balance (from stat card)
-              const currentBalance = parseGBP($valBalance.textContent);
+              // const currentBalance = parseGBP($valBalance.textContent);
+              const currentBalance = parseMoney($valBalance.textContent);
 
               // Template to re-fit (don’t mutate baseCurrentShape)
               const template = baseCurrentShape.slice();
@@ -848,7 +860,8 @@
             });
           }
 
-          contribSpan.textContent = `+ ${fmtGBP(contrib)}`;
+          // contribSpan.textContent = `+ ${fmtGBP(contrib)}`;
+          contribSpan.textContent = `+ ${fmtMoney(contrib)}`;
           activeContribution = contrib;
 
           updateProjectionChart();
@@ -929,6 +942,41 @@
   // Helper to get the current lang the same way you store it for the iframe
   function getLang() {
     return (localStorage.getItem("lang") || "en").toLowerCase() === "de" ? "de" : "en";
+  }
+
+  // Currency per language
+  const CURRENCY = {
+    en: { code: "GBP", locale: "en-GB", symbol: "£" },
+    de: { code: "EUR", locale: "de-DE", symbol: "€" }
+  };
+
+  function getLang() {
+    return (localStorage.getItem("lang") || "en").toLowerCase() === "de" ? "de" : "en";
+  }
+
+  function fmtMoney(n, lang = getLang()) {
+    const { locale, code } = CURRENCY[lang] || CURRENCY.en;
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: code,
+      maximumFractionDigits: 2
+    }).format(Number(n || 0));
+  }
+
+  // Parse both English (1,234.56) and German (1.234,56)
+  function parseMoney(s) {
+    const str = String(s).replace(/[^\d.,\-]/g, "");
+    const hasDot = str.includes(".");
+    const hasComma = str.includes(",");
+    if (hasDot && hasComma) {
+      // Assume de-DE style: 1.234,56
+      return Number(str.replace(/\./g, "").replace(",", ".")) || 0;
+    }
+    if (!hasDot && hasComma) {
+      // 1234,56
+      return Number(str.replace(",", ".")) || 0;
+    }
+    return Number(str) || 0;
   }
 
   // 2) Apply translations to the dashboard (no HTML changes required)
