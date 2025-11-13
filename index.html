@@ -520,7 +520,14 @@
       applyTranslations(lang);
       // Rebuild iframe with the other Cognigy endpoint
       $webrtcFrame.src = buildIframeSrc(lang);
-      applyDashboardTranslations(); 
+      applyDashboardTranslations();
+      if (projectionChart && baseAges) {
+        const t = DASH_T[getLang()];
+        projectionChart.data.labels = baseAges.map(a => `${t.agePrefix}${a}`);
+        projectionChart.data.datasets[0].label = t.chartCurrentLabel;
+        projectionChart.data.datasets[1].label = t.chartTargetLabel;
+        projectionChart.update();
+      } 
     });
 
     /***********************
@@ -529,17 +536,18 @@
     let projectionChart;
     function renderChart(seriesAges, currentSeries, targetSeries){
       baseAges = seriesAges.slice();
-      baseCurrentShape = currentSeries.slice();  // <-- save template
+      baseCurrentShape = currentSeries.slice();
 
+      const t = DASH_T[getLang()];
       const ctx = document.getElementById("projectionChart");
       if (projectionChart) projectionChart.destroy();
       projectionChart = new Chart(ctx, {
         type: "line",
         data: {
-          labels: seriesAges.map(a => `Age ${a}`),
+          labels: seriesAges.map(a => `${t.agePrefix}${a}`),                 // 👈 localized
           datasets: [
-            { label: "Current projection", data: currentSeries, fill: true, tension: 0.35 },
-            { label: "Your target",        data: targetSeries, borderDash: [6,6], tension: 0.35 }
+            { label: t.chartCurrentLabel, data: currentSeries, fill: true, tension: 0.35 }, // 👈 localized
+            { label: t.chartTargetLabel,  data: targetSeries, borderDash: [6,6], tension: 0.35 } // 👈 localized
           ]
         },
         options: {
@@ -705,7 +713,7 @@
         if ($address) {
           $address.textContent = `${DASH_T[getLang()].address}: ${data.payload.address}`;
         }
-        
+
         if ($pill) {
           $pill.classList.remove("hidden");
           // Auto-hide after 3 seconds
@@ -893,7 +901,10 @@
       retireAt: "Retire at",
       chartSubtitle: "Current projection vs target",
       updated: "Updated",
-      updatedSuccessfully: "Updated Successfully"
+      updatedSuccessfully: "Updated Successfully",
+      chartCurrentLabel: "Current projection",
+      chartTargetLabel: "Your target",
+      agePrefix: "Age "
     },
     de: {
       verified: "Verifiziert",
@@ -908,7 +919,10 @@
       retireAt: "Ruhestand mit",
       chartSubtitle: "Aktuelle Prognose im Vergleich zum Ziel",
       updated: "Aktualisiert",
-      updatedSuccessfully: "Erfolgreich aktualisiert"
+      updatedSuccessfully: "Erfolgreich aktualisiert",
+      chartCurrentLabel: "Aktuelle Prognose",
+      chartTargetLabel: "Ihr Ziel",
+      agePrefix: "Alter "
     }
   };
 
